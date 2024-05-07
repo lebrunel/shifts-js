@@ -1,3 +1,5 @@
+import { Chat } from '@chat'
+
 export class Chore {
   task: string;
   output?: string;
@@ -10,6 +12,10 @@ export class Chore {
     this.task = init.task
     this.output = init.output
     this.context = init.context
+  }
+
+  async exec(): Promise<Chat> {
+    return new Chat()
   }
 
   prompt(): string {
