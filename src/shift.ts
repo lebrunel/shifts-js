@@ -20,8 +20,10 @@ export class Shift<K extends JobInputMap = any> {
 
   getChore<T extends K[keyof K]>(name: string, job: Job<T>): Chore {
     if (!this.#chores.has(name)) { throw new Error('chore not defined') } // todo better error
-    const chore = this.#chores.get(name)!(job)
-    return chore instanceof Chore ? chore : new Chore(chore)
+    const choreInit = this.#chores.get(name)!(job)
+    if (choreInit instanceof Chore) { return choreInit }
+    else if (typeof choreInit === 'string') { return new Chore({ task: choreInit }) }
+    else { return new Chore(choreInit) }
   }
 
   startJob<N extends keyof K>(name: N, input: K[N]): Job<K[N]> {
@@ -45,4 +47,4 @@ interface JobSetup<T> {
 }
 
 type JobStartFn<T> = (job: Job<T>) => void
-type ChoreInitFn<T> = (job: Job<T>) => Chore | ChoreParams
+type ChoreInitFn<T> = (job: Job<T>) => string | ChoreParams | Chore
