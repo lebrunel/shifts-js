@@ -23,15 +23,15 @@ export class Job<T> {
   }
 
   find(name: string): Chat | undefined {
-    return this.executionTape.find(ex => ex.name === name)
+    return this.executionTape.find(ex => ex.name === name)?.chat
   }
 
   findAll(name: string): Chat[] {
-    return this.executionTape.filter(ex => ex.name === name)
+    return this.executionTape.filter(ex => ex.name === name).map(ex => ex.chat)
   }
 
   findLast(name: string): Chat | undefined {
-    return this.executionTape.findLast(ex => ex.name === name)
+    return this.executionTape.findLast(ex => ex.name === name)?.chat
   }
 
   finish(): void {

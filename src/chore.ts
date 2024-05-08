@@ -1,21 +1,36 @@
 import { Chat } from '@chat'
+import type { LLM } from '@llm'
+import type { Tool } from '@tool'
 
 export class Chore {
   task: string;
   output?: string;
   context?: string;
-  //tools: Tool[];
+  tools: Tool[];
   //worker?: Worker;
-  //llm?: LLM;
+  worker?: any;
+  llm?: LLM;
 
-  constructor(init: ChoreParams) {
-    this.task = init.task
-    this.output = init.output
-    this.context = init.context
+  constructor(params: ChoreParams) {
+    this.task = params.task
+    this.output = params.output
+    this.context = params.context
+    this.tools = params.tools || []
+    //this.worker = params.worker
+    this.llm = params.llm
   }
 
   async exec(): Promise<Chat> {
-    return new Chat()
+    const chat = new Chat({
+      llm: this.worker?.llm || this.llm,
+      system: this.worker?.prompt(),
+      prompt: this.prompt(),
+      tools: this.worker?.tools.concat(this.tools) || this.tools,
+    })
+
+    await chat.generateNextMessage()
+    await chat.handleToolUse()
+    return chat
   }
 
   prompt(): string {
@@ -30,7 +45,7 @@ export interface ChoreParams {
   task: string;
   output?: string;
   context?: string;
-  //tools?: Tool[];
+  tools?: Tool[];
   //worker?: Worker;
-  //llm?: LLM;
+  llm?: LLM;
 }
