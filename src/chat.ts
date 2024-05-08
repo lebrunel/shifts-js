@@ -100,7 +100,7 @@ export interface ChatInitParams {
   llm?: LLM;
   system?: string;
   prompt?: string;
-  tools?: any[];
+  tools?: Tool[];
 }
 
 export type ChatMessage = ChatBotMessage | ChatUserMessage;

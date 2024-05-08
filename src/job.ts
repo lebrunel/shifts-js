@@ -1,6 +1,7 @@
 import { Chat } from '@chat'
 import { Chore } from '@chore'
 import type { Shift } from '@shift'
+import { Worker } from '@worker'
 
 export class Job<T> {
   #status: JobStatus = JobStatus.Pending;
@@ -47,17 +48,29 @@ export class Job<T> {
     return chat
   }
 
+  worker(name: string): Worker {
+    return this.getWorker(name)
+  }
+
   private async callAfterHooks(name: string): Promise<void> {
-    for (const hook of this.shift.getAfterHooks(name)) {
+    for (const hook of this.shift.afterHooks(name)) {
       await hook(this)
     }
   }
 
   private getChore(name: string): Chore {
-    const choreInit = this.shift.getChore(name)(this)
-    if (choreInit instanceof Chore) { return choreInit }
-    else if (typeof choreInit === 'string') { return new Chore({ task: choreInit }) }
-    else { return new Chore(choreInit) }
+    if (!this.shift.chores.has(name)) throw new Error('chore not defined') // todo better error
+    const _chore = this.shift.chores.get(name)!(this)
+    if (_chore instanceof Chore) { return _chore }
+    else if (typeof _chore === 'string') { return new Chore({ task: _chore }) }
+    else { return new Chore(_chore) }
+  }
+
+  private getWorker(name: string): Worker {
+    if (!this.shift.workers.has(name)) throw new Error('worker not defined') // todo better error
+    const _worker = this.shift.workers.get(name)!(this)
+    if (_worker instanceof Worker) { return _worker }
+    else { return new Worker(_worker) }
   }
 }
 

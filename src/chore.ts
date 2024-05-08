@@ -1,14 +1,14 @@
 import { Chat } from '@chat'
 import type { LLM } from '@llm'
 import type { Tool } from '@tool'
+import type { Worker } from "@worker"
 
 export class Chore {
   task: string;
   output?: string;
   context?: string;
   tools: Tool[];
-  //worker?: Worker;
-  worker?: any;
+  worker?: Worker;
   llm?: LLM;
 
   constructor(params: ChoreParams) {
@@ -16,7 +16,7 @@ export class Chore {
     this.output = params.output
     this.context = params.context
     this.tools = params.tools || []
-    //this.worker = params.worker
+    this.worker = params.worker
     this.llm = params.llm
   }
 
@@ -27,6 +27,8 @@ export class Chore {
       prompt: this.prompt(),
       tools: this.worker?.tools.concat(this.tools) || this.tools,
     })
+
+    console.log(chat)
 
     await chat.generateNextMessage()
     await chat.handleToolUse()
@@ -41,11 +43,13 @@ export class Chore {
   }
 }
 
+// Types
+
 export interface ChoreParams {
   task: string;
   output?: string;
   context?: string;
   tools?: Tool[];
-  //worker?: Worker;
+  worker?: Worker;
   llm?: LLM;
 }

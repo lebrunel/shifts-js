@@ -1,10 +1,12 @@
 import { Job } from './job'
 import { Chore, type ChoreParams } from './chore'
+import type { Worker, WorkerParams } from '@worker';
 
 export class Shift<J extends JobInputMap = any> {
   #afterHooks: Map<string, Array<JobCallback<J[keyof J]>>> = new Map();
-  #chores: Map<string, ChoreInitFn<J[keyof J]>> = new Map();
   #jobs: Map<keyof J, JobSetup<J[keyof J]>> = new Map();
+  chores: Map<string, ChoreInitFn<J[keyof J]>> = new Map();
+  workers: Map<string, WorkerInitFn<J[keyof J]>> = new Map();
 
   defineJob<T extends J[keyof J], N extends keyof J & string>(name: N, jobStartFn: JobCallback<T>): void {
     if (this.#jobs.has(name)) { throw new Error('duplicate job name') } // todo better error
@@ -15,25 +17,25 @@ export class Shift<J extends JobInputMap = any> {
   }
 
   defineChore<T extends J[keyof J]>(name: string, choreInitFn: ChoreInitFn<T>): void {
-    if (this.#chores.has(name)) { throw new Error('duplicate job name') } // todo better error
-    this.#chores.set(name, choreInitFn)
+    if (this.chores.has(name)) { throw new Error('duplicate chore name') } // todo better error
+    this.chores.set(name, choreInitFn)
+  }
+
+  defineWorker<T extends J[keyof J]>(name: string, workerInitFn: WorkerInitFn<T>): void {
+    if (this.workers.has(name)) { throw new Error('duplicate chore name') } // todo better error
+    this.workers.set(name, workerInitFn)
   }
 
   afterExec<T extends J[keyof J]>(name: string, afterExecFn: JobCallback<T>): void {
-    if (!this.#chores.has(name)) { throw new Error('chore not defined') } // todo better error
+    if (!this.chores.has(name)) { throw new Error('chore not defined') } // todo better error
     const hooks = this.#afterHooks.get(name) || []
     hooks.push(afterExecFn)
     this.#afterHooks.set(name, hooks)
   }
 
-  getAfterHooks<T extends J[keyof J]>(name: string): Array<JobCallback<T>> {
-    if (!this.#chores.has(name)) { throw new Error('chore not defined') } // todo better error
+  afterHooks<T extends J[keyof J]>(name: string): Array<JobCallback<T>> {
+    if (!this.chores.has(name)) { throw new Error('chore not defined') } // todo better error
     return this.#afterHooks.get(name) || []
-  }
-
-  getChore<T extends J[keyof J]>(name: string): ChoreInitFn<T> {
-    if (!this.#chores.has(name)) { throw new Error('chore not defined') } // todo better error
-    return this.#chores.get(name)!
   }
 
   startJob<N extends keyof J>(name: N, input: J[N]): Job<J[N]> {
@@ -58,3 +60,4 @@ interface JobSetup<T> {
 
 type JobCallback<T> = (job: Job<T>) => any
 type ChoreInitFn<T> = (job: Job<T>) => string | ChoreParams | Chore
+type WorkerInitFn<T> = (job: Job<T>) => WorkerParams | Worker
