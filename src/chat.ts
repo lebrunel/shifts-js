@@ -11,7 +11,7 @@ export class Chat {
   messages: ChatMessage[] = [];
   tools: Tool[];
 
-  constructor(params: ChatInitParams) {
+  constructor(params: ChatInitParams & ChatEventHandlers) {
     const $config = useConfig()
 
     this.system = params.system
@@ -22,6 +22,9 @@ export class Chat {
       const index = this.messages.length
       this.events.emit('message_delta', { ...e, index }, this)
     })
+
+    if (params.onMessage) { this.on('message', params.onMessage) }
+    if (params.onMessageDelta) { this.on('message_delta', params.onMessageDelta) }
 
     if (params.prompt) {
       this.addMessage({ role: 'user', content: params.prompt })
@@ -101,6 +104,11 @@ export interface ChatInitParams {
   system?: string;
   prompt?: string;
   tools?: Tool[];
+}
+
+export interface ChatEventHandlers {
+  onMessage?: ChatEvents['message'];
+  onMessageDelta?: ChatEvents['message_delta'];
 }
 
 export type ChatMessage = ChatBotMessage | ChatUserMessage;

@@ -1,4 +1,4 @@
-import { Chat } from '@chat'
+import { Chat, type ChatEventHandlers } from '@chat'
 import type { LLM } from '@llm'
 import type { Tool } from '@tool'
 import type { Worker } from "@worker"
@@ -20,15 +20,14 @@ export class Chore {
     this.llm = params.llm
   }
 
-  async exec(): Promise<Chat> {
+  async exec(params: ChatEventHandlers = {}): Promise<Chat> {
     const chat = new Chat({
+      ...params,
       llm: this.worker?.llm || this.llm,
       system: this.worker?.prompt(),
       prompt: this.prompt(),
       tools: this.worker?.tools.concat(this.tools) || this.tools,
     })
-
-    console.log(chat)
 
     await chat.generateNextMessage()
     await chat.handleToolUse()

@@ -1,13 +1,23 @@
+import { createNanoEvents, type Unsubscribe } from 'nanoevents'
 import { Chat } from '@chat'
 import { Chore } from '@chore'
+import type { JobEvents } from '@events'
 import type { Shift } from '@shift'
 import { Worker } from '@worker'
 
+
 export class Job<T> {
+  #events = createNanoEvents<JobEvents<T>>();
   #status: JobStatus = JobStatus.Pending;
+  readonly promise: Promise<Job<T>>;
   readonly executionTape: JobExecution[] = [];
 
-  constructor(readonly shift: Shift, readonly input: T) {}
+  constructor(readonly shift: Shift, readonly input: T) {
+    this.promise = new Promise((resolve, reject) => {
+      this.on('success', resolve)
+      this.on('failure', reject)
+    })
+  }
 
   get status(): JobStatus {
     return this.#status
@@ -37,19 +47,36 @@ export class Job<T> {
 
   finish(): void {
     this.#status = JobStatus.Success
+    this.#events.emit('success', this)
   }
 
   async exec(name: string): Promise<Chat> {
     const chore = this.getChore(name)
-    console.log(chore)
-    const chat = await chore.exec()
+    const index = this.executionTape.length
+    const chat = await chore.exec({
+      onMessage: (message, chat) => {
+        this.#events.emit('chat.message', { name, index, message, chat }, this)
+      },
+      onMessageDelta: (event, chat) => {
+        const { text, snapshot } = event
+        this.#events.emit('chat.message_delta', { name, index, text, snapshot, chat }, this)
+      },
+    })
     this.executionTape.push({ name, chat })
+    this.#events.emit('chat.success', { name, index, chat }, this)
     await this.callAfterHooks(name)
     return chat
   }
 
   worker(name: string): Worker {
     return this.getWorker(name)
+  }
+
+  on<K extends keyof JobEvents<T>>(
+    event: K,
+    handler: JobEvents<T>[K]
+  ) : Unsubscribe {
+    return this.#events.on(event, handler)
   }
 
   private async callAfterHooks(name: string): Promise<void> {
