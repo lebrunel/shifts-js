@@ -1,6 +1,6 @@
 import { Anthropic as A, type ClientOptions } from '@anthropic-ai/sdk'
 import { useConfig } from '@config'
-import { LLMAdapter, type LLMChatParams, type LLMInitializer } from '@llm'
+import { LLMAdapter, type LLMChatParams, type LLMInitializer, type LLMResponseUpdate } from '@llm'
 import type { ChatBotMessage, ChatMessage } from '@chat'
 import type { Tool } from '@tool'
 
@@ -24,7 +24,7 @@ export class AnthropicLLM extends LLMAdapter<A, AParams, AResponse> {
     } as AParams)
   }
 
-  handleStreamEvent(event: A.MessageStreamEvent, response: A.Message) {
+  handleStreamEvent(event: A.MessageStreamEvent, response: A.Message): LLMResponseUpdate<A.Message> {
     let text: string | undefined
 
     switch(event.type) {

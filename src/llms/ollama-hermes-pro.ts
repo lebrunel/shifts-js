@@ -1,14 +1,14 @@
 import { Ollama } from 'ollama'
 import type { Config, GenerateRequest, GenerateResponse } from 'ollama'
 import type { ChatMessage } from '@chat'
-import { LLMAdapter, type LLMChatParams, type LLMInitializer } from '@llm'
+import { LLMAdapter, type LLMChatParams, type LLMInitializer, type LLMResponseUpdate } from '@llm'
 import type { Tool } from '@tool'
 import { dd } from '@util'
 
 type OParams = GenerateRequest
 type OResponse = GenerateResponse
 
-export const useOllamaHermesPro: LLMInitializer<Config, OParams> = (params, opts) => {
+export const useOllamaHermesPro: LLMInitializer<Partial<Config>, OParams> = (params, opts) => {
   const client = new Ollama(opts)
   return new OllamaHermesProLLM(client, params)
 }
@@ -26,7 +26,7 @@ export class OllamaHermesProLLM extends LLMAdapter<Ollama, OParams, OResponse> {
     return this.client.generate(params)    
   }
 
-  handleStreamEvent(event: OResponse, response: OResponse) {
+  handleStreamEvent(event: OResponse, response: OResponse): LLMResponseUpdate<OResponse> {
     let text = event.response
 
     if (response) {
