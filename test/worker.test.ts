@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { Worker } from '@worker'
+import { defineTool } from '@tool'
+import { OllamaHermesProLLM, useOllamaHermesPro } from '@llms/ollama-hermes-pro'
 
 describe('Worker()', () => {
   test('new with defaults', () => {
@@ -15,8 +17,40 @@ describe('Worker()', () => {
     expect(worker.llm).toBeUndefined()
   })
 
-  test.todo('worker with tools')
-  test.todo('worker with llm')
+  test('worker with tools', () => {
+    const tool = defineTool<{
+      a: number;
+      b: number;
+    }>({
+      name: 'sum',
+      description: 'test',
+      params: {
+        a: { type: 'number', description: 'test' },
+        b: { type: 'number', description: 'test' },
+      },
+      handler({ a, b }) {
+        return (a + b).toString()
+      }
+    })
+    const worker = new Worker({
+      role: 'a',
+      goal: 'b',
+      tools: [tool]
+    })
+
+    expect(worker.tools).toBeArrayOfSize(1)
+    expect(worker.tools[0]).toEqual(tool)
+  })
+
+  test('worker with llm', () => {
+    const worker = new Worker({
+      role: 'a',
+      goal: 'b',
+      llm: useOllamaHermesPro({ model: 'nous-hermes-pro' })
+    })
+
+    expect(worker.llm).toBeInstanceOf(OllamaHermesProLLM)
+  })
 })
 
 describe('workerPrompt()', () => {
