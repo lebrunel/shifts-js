@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
+import { sumTool } from './support/tools'
 import { Worker } from '@worker'
-import { defineTool } from '@tool'
 import { OllamaHermesProLLM, useOllamaHermesPro } from '@llms/ollama-hermes-pro'
 
 describe('Worker()', () => {
@@ -17,44 +17,24 @@ describe('Worker()', () => {
     expect(worker.llm).toBeUndefined()
   })
 
-  test('worker with tools', () => {
-    const tool = defineTool<{
-      a: number;
-      b: number;
-    }>({
-      name: 'sum',
-      description: 'test',
-      params: {
-        a: { type: 'number', description: 'test' },
-        b: { type: 'number', description: 'test' },
-      },
-      handler({ a, b }) {
-        return (a + b).toString()
-      }
-    })
+  test('worker with full params', () => {
     const worker = new Worker({
       role: 'a',
       goal: 'b',
-      tools: [tool]
+      story: 'c',
+      tools: [sumTool],
+      llm: useOllamaHermesPro({ model: 'nous-hermes-pro' }),
     })
 
+    expect(worker.story).toEqual('c')
     expect(worker.tools).toBeArrayOfSize(1)
-    expect(worker.tools[0]).toEqual(tool)
-  })
-
-  test('worker with llm', () => {
-    const worker = new Worker({
-      role: 'a',
-      goal: 'b',
-      llm: useOllamaHermesPro({ model: 'nous-hermes-pro' })
-    })
-
+    expect(worker.tools[0]).toEqual(sumTool)
     expect(worker.llm).toBeInstanceOf(OllamaHermesProLLM)
   })
 })
 
-describe('workerPrompt()', () => {
-  test('with story', () => {
+describe('Worker#prompt()', () => {
+  test('without story', () => {
 
     const worker = new Worker({
       role: 'a',
@@ -65,7 +45,7 @@ describe('workerPrompt()', () => {
     expect(worker.prompt()).toMatch(/^Your role.+a\.\nc\n\nYour.+goal: b$/)
   })
 
-  test('without story', () => {
+  test('with story', () => {
     const worker = new Worker({
       role: 'a',
       goal: 'b',
