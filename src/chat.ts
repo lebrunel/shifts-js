@@ -5,13 +5,13 @@ import type { LLM } from '@llm'
 import type { Tool } from '@tool'
 
 export class Chat {
-  private events = createNanoEvents<ChatEvents>()
-  private llm: LLM;
+  #events = createNanoEvents<ChatEvents>()
+  llm: LLM;
   system?: string;
   messages: ChatMessage[] = [];
   tools: Tool[];
 
-  constructor(params: ChatInitParams & ChatEventHandlers) {
+  constructor(params: ChatInitParams & ChatEventHandlers = {}) {
     const $config = useConfig()
 
     this.system = params.system
@@ -20,7 +20,7 @@ export class Chat {
 
     this.llm.on('content', e => {
       const index = this.messages.length
-      this.events.emit('message_delta', { ...e, index }, this)
+      this.#events.emit('message_delta', { ...e, index }, this)
     })
 
     if (params.onMessage) { this.on('message', params.onMessage) }
@@ -49,7 +49,7 @@ export class Chat {
 
   addMessage(message: ChatMessage): this {
     this.messages.push(message)
-    this.events.emit('message', message, this)
+    this.#events.emit('message', message, this)
     return this
   }
 
@@ -88,11 +88,11 @@ export class Chat {
     event: K,
     handler: ChatEvents[K]
   ) : Unsubscribe {
-    return this.events.on(event, handler)
+    return this.#events.on(event, handler)
   }
 }
 
-enum ChatStatus {
+export enum ChatStatus {
   Pending,
   Complete
 }
