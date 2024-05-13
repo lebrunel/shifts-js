@@ -1,24 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, test } from 'bun:test'
-import { Anthropic as A } from '@anthropic-ai/sdk'
 import { AnthropicLLM, useAnthropic } from '@llms/anthropic'
 import { Chat } from '@chat'
-import { mock } from '../support/mocking'
-
-async function* asyncGen(message: A.Message): AsyncGenerator<A.MessageStreamEvent> {
-  yield { type: 'message_start', message: { ...message, content: [], stop_reason: null, stop_sequence: null } }
-  
-  for (let idx = 0; idx < message.content.length; idx++) {
-    const content = message.content[idx]!;
-    yield { type: 'content_block_start', index: idx, content_block: { type: content.type, text: '' } }
-    for (let chunk = 0; chunk * 5 < content.text.length; chunk++) {
-      yield { type: 'content_block_delta', index: idx, delta: { type: 'text_delta', text: content.text.slice(chunk * 5, (chunk + 1) * 5) } }
-    }
-    yield { type: 'content_block_stop', index: idx }
-  }
-
-  yield { type: 'message_delta', delta: { stop_reason: message.stop_reason, stop_sequence: message.stop_sequence }, usage: { output_tokens: 6 } }
-  yield { type: 'message_stop' }
-}
+import { mock, anthropicAsyncGen } from '../support/mocking'
 
 describe('Anthropic', () => {
   let llm: AnthropicLLM,
@@ -30,7 +13,7 @@ describe('Anthropic', () => {
 
   beforeEach(() => {
     chat = new Chat({ llm, prompt: 'Hello Claude.' })
-    mock.response(asyncGen({
+    mock.response(anthropicAsyncGen({
       id: "msg_015S8zkpv75gaPtDJzCyiKLT",
       type: "message",
       role: "assistant",

@@ -32,9 +32,8 @@ export class Chat {
   }
 
   get status(): ChatStatus {
-    return this.messages.at(-1)?.role === 'chatbot' ?
-      ChatStatus.Complete :
-      ChatStatus.Pending
+    if (!this.messages.length) return ChatStatus.Pending
+    return this.messages.at(-1)?.role === 'user' ? ChatStatus.Ready : ChatStatus.Complete
   }
 
   get input(): string {
@@ -48,12 +47,21 @@ export class Chat {
   }
 
   addMessage(message: ChatMessage): this {
+    if (message.role === 'user' && this.status === ChatStatus.Ready) {
+      throw new Error('expecting chatbot message') // todo better error
+    } else if (message.role === 'chatbot' && this.status !== ChatStatus.Ready) {
+      throw new Error('expecting user message') // todo better error
+    }
+
     this.messages.push(message)
     this.#events.emit('message', message, this)
     return this
   }
 
   async generateNextMessage(): Promise<this> {
+    if (this.status !== ChatStatus.Ready) {
+      throw new Error('chat not ready') // todo better error
+    }
     const message = await this.llm.generateNextMessage({
       system: this.system,
       messages: this.messages,
@@ -63,6 +71,9 @@ export class Chat {
   }
 
   async handleToolUse(): Promise<this> {
+    if (this.status !== ChatStatus.Complete) {
+      throw new Error('chat not complete') // todo better error
+    }
     const lastMsg = this.messages.at(-1)
     if (lastMsg && lastMsg.role === 'chatbot' && lastMsg.tools?.length) {
       const nextMsg: ChatUserMessage = { role: 'user', content: '', tools: [] }
@@ -94,7 +105,8 @@ export class Chat {
 
 export enum ChatStatus {
   Pending,
-  Complete
+  Ready,
+  Complete,
 }
 
 // Types
