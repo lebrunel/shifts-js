@@ -2,6 +2,10 @@
   "name": "shifts",
   "module": "index.ts",
   "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./*": "./src/*.ts"
+  },
   "dependencies": {
     "nanoevents": "^9.0.0",
     "ts-dedent": "^2.2.0",
