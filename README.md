@@ -53,9 +53,9 @@ const newsShift = defineShift<{
 
   defineJob('analyzeNews', async job => {
     for (const url of job.input) {
-      await analize.exec(url)
+      await job.exec('summarize', url)
     }
-    await writeRoundup.exec()
+    await job.exec('analyze')
   })
 })
 
